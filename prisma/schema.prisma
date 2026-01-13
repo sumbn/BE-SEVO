@@ -1,0 +1,81 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Role-Based Access Control
+enum Role {
+  ADMIN           // Full system access
+  USER            // Basic user access  
+  CONTENT_MANAGER // Can manage website content
+  SALES           // Can view/manage leads and sales data
+}
+
+// Auth user with role-based permissions
+model Admin {
+  id           String         @id @default(cuid())
+  email        String         @unique
+  password     String         // Bcrypt hashed
+  name         String?
+  role         Role           @default(USER)
+  refreshTokens RefreshToken[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  adminId   String
+  admin     Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  isRevoked Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+// Dynamic Website Content
+model Content {
+  key       String   @id // e.g., 'global', 'homepage', 'about'
+  value     Json     // JSON blob containing section data
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+enum CourseStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Course {
+  id          String       @id @default(cuid())
+  slug        String       @unique
+  title       String
+  description String?      @db.Text
+  ageRange    String?      // e.g., '6-12 years'
+  duration    String?      // e.g., '12 weeks'
+  status      CourseStatus @default(DRAFT)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("courses")
+}
+
+model Lead {
+  id          String   @id @default(cuid())
+  parentName  String
+  phone       String
+  studentName String?
+  studentAge  Int?
+  courseId    String?  // Optional relation to course slug or ID
+  status      String   @default("new")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("leads")
+}
