@@ -1,0 +1,40 @@
+# Dependencies
+node_modules
+
+# Build output
+dist
+
+# Git
+.git
+.gitignore
+
+# Environment files (secrets should be passed via env vars)
+.env
+.env.*
+
+# Documentation
+*.md
+docs/
+
+# Testing
+test/
+coverage/
+*.spec.ts
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+logs/
+
+# Uploads (should be external storage in production)
+uploads/
+
+# Config files not needed in container
+.eslintrc*
+eslint.config.mjs
+.prettierrc
+tsconfig*.json
+nest-cli.json
