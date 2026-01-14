@@ -31,7 +31,7 @@ export class LoggingService implements ILogger {
 
   constructor(
     @Inject(LOGGER_ADAPTER) private readonly adapter: ILoggerAdapter,
-    private readonly configService: ConfigService,
+    @Inject(ConfigServiceClass) private readonly configService: ConfigService,
     @Inject(REQUEST) private readonly request: Request,
   ) {
     this.env = this.configService.get<string>('NODE_ENV', 'development');

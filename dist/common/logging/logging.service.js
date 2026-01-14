@@ -14,6 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LoggingService = exports.LOGGER_ADAPTER = void 0;
 const common_1 = require("@nestjs/common");
+const config_1 = require("@nestjs/config");
 const core_1 = require("@nestjs/core");
 exports.LOGGER_ADAPTER = Symbol('LOGGER_ADAPTER');
 let LoggingService = class LoggingService {
@@ -93,6 +94,7 @@ exports.LoggingService = LoggingService;
 exports.LoggingService = LoggingService = __decorate([
     (0, common_1.Injectable)({ scope: common_1.Scope.REQUEST }),
     __param(0, (0, common_1.Inject)(exports.LOGGER_ADAPTER)),
+    __param(1, (0, common_1.Inject)(config_1.ConfigService)),
     __param(2, (0, common_1.Inject)(core_1.REQUEST)),
     __metadata("design:paramtypes", [Object, Function, Object])
 ], LoggingService);
