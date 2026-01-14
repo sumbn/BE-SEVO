@@ -15,17 +15,29 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ContentService = void 0;
 const common_1 = require("@nestjs/common");
 const content_repository_interface_1 = require("./interfaces/content-repository.interface");
+const locale_util_1 = require("../common/utils/locale.util");
+const locale_constants_1 = require("../common/constants/locale.constants");
 let ContentService = class ContentService {
     contentRepo;
     constructor(contentRepo) {
         this.contentRepo = contentRepo;
     }
-    async findAll() {
+    async findAll(locale = locale_constants_1.DEFAULT_LOCALE) {
         const contents = await this.contentRepo.findAll();
-        return contents.reduce((acc, curr) => ({ ...acc, [curr.key]: curr.value }), {});
+        return contents.reduce((acc, curr) => {
+            const localizedValue = (0, locale_util_1.extractLocale)(curr.value, locale);
+            return { ...acc, [curr.key]: localizedValue };
+        }, {});
     }
-    async findByKey(key) {
-        return this.contentRepo.findByKey(key);
+    async findByKey(key, locale = locale_constants_1.DEFAULT_LOCALE) {
+        const content = await this.contentRepo.findByKey(key);
+        if (!content) {
+            return null;
+        }
+        return {
+            ...content,
+            value: (0, locale_util_1.extractLocale)(content.value, locale),
+        };
     }
     async upsert(key, value) {
         return this.contentRepo.upsert(key, value);

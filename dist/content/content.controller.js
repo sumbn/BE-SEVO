@@ -20,16 +20,17 @@ const roles_guard_1 = require("../auth/roles.guard");
 const roles_decorator_1 = require("../auth/roles.decorator");
 const client_1 = require("@prisma/client");
 const content_dto_1 = require("./dto/content.dto");
+const locale_dto_1 = require("./dto/locale.dto");
 let ContentController = class ContentController {
     contentService;
     constructor(contentService) {
         this.contentService = contentService;
     }
-    async findAll() {
-        return this.contentService.findAll();
+    async findAll(query) {
+        return this.contentService.findAll(query.locale);
     }
-    async getByKey(key) {
-        return this.contentService.findByKey(key);
+    async getByKey(key, query) {
+        return this.contentService.findByKey(key, query.locale);
     }
     async update(key, updateContentDto) {
         return this.contentService.upsert(key, updateContentDto.value);
@@ -38,15 +39,17 @@ let ContentController = class ContentController {
 exports.ContentController = ContentController;
 __decorate([
     (0, common_1.Get)(),
+    __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [locale_dto_1.LocaleQueryDto]),
     __metadata("design:returntype", Promise)
 ], ContentController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':key'),
     __param(0, (0, common_1.Param)('key')),
+    __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, locale_dto_1.LocaleQueryDto]),
     __metadata("design:returntype", Promise)
 ], ContentController.prototype, "getByKey", null);
 __decorate([
