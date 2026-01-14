@@ -18,7 +18,10 @@ async function main() {
       { src: "/logos/partner3.png", alt: "LearnForge" },
       { src: "/logos/partner4.png", alt: "Nexus Global" }
     ],
-    showVisual: true
+    showVisual: true,
+    visualImages: [
+      { src: '/hero-collage.png', alt: 'Hero Image 1' }
+    ]
   };
 
   await prisma.content.upsert({

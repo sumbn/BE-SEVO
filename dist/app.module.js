@@ -19,13 +19,18 @@ const content_module_1 = require("./content/content.module");
 const courses_module_1 = require("./courses/courses.module");
 const leads_module_1 = require("./leads/leads.module");
 const uploads_module_1 = require("./uploads/uploads.module");
+const logging_1 = require("./common/logging");
 let AppModule = class AppModule {
+    configure(consumer) {
+        consumer.apply(logging_1.CorrelationIdMiddleware).forRoutes('*');
+    }
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
             config_1.ConfigModule.forRoot({ isGlobal: true }),
+            logging_1.LoggingModule,
             serve_static_1.ServeStaticModule.forRoot({
                 rootPath: (0, path_1.join)(process.cwd(), 'uploads'),
                 serveRoot: '/uploads',
