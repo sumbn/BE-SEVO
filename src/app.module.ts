@@ -33,7 +33,7 @@ import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
     I18nModule.forRoot({
       fallbackLanguage: 'vi',
       loaderOptions: {
-        path: join(__dirname, '/i18n/'),
+        path: join(process.cwd(), 'src/i18n'),
         watch: true,
       },
       resolvers: [

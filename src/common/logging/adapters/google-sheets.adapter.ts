@@ -59,8 +59,8 @@ export class GoogleSheetsAdapter implements ILoggerAdapter, OnModuleDestroy {
   
   // Batch mechanism
   private logBuffer: GoogleSheetsRow[] = [];
-  private readonly flushInterval: number = 10000; // 10 seconds
-  private readonly maxBufferSize: number = 50;
+  private readonly flushInterval: number = 5000; // 5 seconds
+  private readonly maxBufferSize: number = 20;
   private flushTimer: NodeJS.Timeout | null = null;
 
   constructor(private readonly configService: ConfigService) {

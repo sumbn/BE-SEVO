@@ -71,7 +71,7 @@ class BatchLogsDto {
  * 
  * @see docs/standards/_INDEX.md#logging-standards
  */
-@Controller('api/internal')
+@Controller('logs')
 export class InternalLogsController {
   constructor(private readonly loggingService: LoggingService) {}
 
@@ -81,7 +81,7 @@ export class InternalLogsController {
    * POST /api/internal/logs
    * Body: { logs: FrontendLogEntry[] }
    */
-  @Post('logs')
+  @Post()
   @HttpCode(HttpStatus.ACCEPTED)
   async receiveLogs(@Body() body: BatchLogsDto): Promise<{ received: number }> {
     const { logs } = body;

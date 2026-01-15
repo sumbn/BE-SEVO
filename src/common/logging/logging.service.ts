@@ -82,9 +82,13 @@ export class LoggingService implements ILogger {
       ? this.sanitize(context) 
       : {};
 
+    // Allow overriding 'service' from context (e.g. from frontend logs)
+    const contextService = (sanitizedContext.service || sanitizedContext.source) as string;
+    const finalService = contextService || this.service;
+
     return {
       env: this.env,
-      service: this.service,
+      service: finalService,
       request_id: requestId,
       ...sanitizedContext,
     };
