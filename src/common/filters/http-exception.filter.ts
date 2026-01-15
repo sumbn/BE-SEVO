@@ -20,18 +20,26 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const res = exception.getResponse() as any;
-      message = typeof res === 'string' ? res : res.message || exception.message;
       
-      // Attempt to extract custom error code if present, otherwise generate from message
-      errorCode = res.errorCode || this.generateErrorCode(status, message);
+      if (res && typeof res === 'object' && res.error && typeof res.error === 'object') {
+        message = res.error.message || exception.message;
+        errorCode = res.error.code || this.generateErrorCode(status, message);
+      } else {
+        message = typeof res === 'string' ? res : res.message || exception.message;
+        // If message is in UPPER_SNAKE_CASE, use it as errorCode
+        const isCode = /^[A-Z0-9_]+$/.test(message);
+        errorCode = res.errorCode || (isCode ? message : this.generateErrorCode(status, message));
+      }
     } else {
       console.error('Unhandled Exception:', exception);
     }
 
     response.status(status).json({
-      message,
-      errorCode,
-      statusCode: status,
+      success: false,
+      error: {
+        code: errorCode,
+        message: message,
+      }
     });
   }
 

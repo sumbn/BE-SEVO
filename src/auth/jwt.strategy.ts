@@ -13,15 +13,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
-    // These keys must match what we put in the payload during login
-    if (!payload.sub || !payload.role) {
-      throw new UnauthorizedException('Invalid token payload');
+    if (!payload.sub || !payload.roles) {
+      throw new UnauthorizedException('INVALID_TOKEN_PAYLOAD');
     }
     
     return { 
       userId: payload.sub, 
       email: payload.email,
-      role: payload.role 
+      roles: payload.roles 
     };
   }
 }

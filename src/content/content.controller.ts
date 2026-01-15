@@ -3,7 +3,8 @@ import { ContentService } from './content.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { Role } from '@prisma/client';
+// Role enum removed from Prisma since we moved to 3NF model-based roles
+
 import { UpdateContentDto } from './dto/content.dto';
 import { LocaleQueryDto } from './dto/locale.dto';
 
@@ -25,7 +26,7 @@ export class ContentController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.CONTENT_MANAGER)
+  @Roles('ADMIN', 'CONTENT_MANAGER')
   @Put(':key')
   async update(@Param('key') key: string, @Body() updateContentDto: UpdateContentDto) {
     return this.contentService.upsert(key, updateContentDto.value);

@@ -4,7 +4,8 @@ import { CreateCourseDto, UpdateCourseDto } from './dto/course.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { Role } from '@prisma/client';
+// Role enum removed from Prisma since we moved to 3NF model-based roles
+
 
 @Controller('courses')
 export class CoursesController {
@@ -17,7 +18,7 @@ export class CoursesController {
 
   @Get('admin')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.CONTENT_MANAGER)
+  @Roles('ADMIN', 'CONTENT_MANAGER')
   async findAllAdmin() {
     return this.coursesService.findAll();
   }
@@ -29,21 +30,21 @@ export class CoursesController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.CONTENT_MANAGER)
+  @Roles('ADMIN', 'CONTENT_MANAGER')
   async create(@Body() createCourseDto: CreateCourseDto) {
     return this.coursesService.create(createCourseDto);
   }
 
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.CONTENT_MANAGER)
+  @Roles('ADMIN', 'CONTENT_MANAGER')
   async update(@Param('id') id: string, @Body() updateCourseDto: UpdateCourseDto) {
     return this.coursesService.update(id, updateCourseDto);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.CONTENT_MANAGER)
+  @Roles('ADMIN', 'CONTENT_MANAGER')
   async remove(@Param('id') id: string) {
     return this.coursesService.delete(id);
   }

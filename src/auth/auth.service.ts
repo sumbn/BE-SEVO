@@ -3,9 +3,9 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
-import { Role } from '@prisma/client';
 import type { ITokenRepository } from './interfaces/token-repository.interface';
 import { TOKEN_REPOSITORY } from './interfaces/token-repository.interface';
+import { RegisterDto } from './dto/auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -15,50 +15,79 @@ export class AuthService {
     @Inject(TOKEN_REPOSITORY) private tokenRepo: ITokenRepository,
   ) {}
 
-  async register(data: { email: string; password: string; name?: string; role?: Role }) {
-    const existing = await this.prisma.admin.findUnique({
-      where: { email: data.email },
+  async register(dto: RegisterDto) {
+    const existing = await this.prisma.user.findUnique({
+      where: { email: dto.email },
     });
 
     if (existing) {
-      throw new ConflictException('Email already exists');
+      throw new ConflictException('EMAIL_ALREADY_EXISTS');
     }
 
-    const hashedPassword = await bcrypt.hash(data.password, 10);
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-    return this.prisma.admin.create({
-      data: {
-        ...data,
-        password: hashedPassword,
-        role: data.role || Role.USER,
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-      },
+    // Using transaction to ensure both User and Credential are created
+    return this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          email: dto.email,
+          fullName: dto.fullName,
+        },
+      });
+
+      await tx.userCredential.create({
+        data: {
+          userId: user.id,
+          passwordHash: hashedPassword,
+          provider: 'local',
+        },
+      });
+
+      // Assign default 'USER' role if it exists
+      const role = await tx.role.findUnique({ where: { name: 'USER' } });
+      if (role) {
+        await tx.userRole.create({
+          data: {
+            userId: user.id,
+            roleId: role.id,
+          },
+        });
+      }
+
+      return user;
     });
   }
 
   async validateUser(email: string, pass: string): Promise<any> {
-    const user = await this.prisma.admin.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { email },
+      include: {
+        credentials: {
+          where: { provider: 'local' },
+        },
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+      },
     });
 
-    if (user && await bcrypt.compare(pass, user.password)) {
+    if (user && user.credentials[0]?.passwordHash && await bcrypt.compare(pass, user.credentials[0].passwordHash)) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password, ...result } = user;
+      const { credentials, ...result } = user;
       return result;
     }
     return null;
   }
 
   async login(user: any) {
+    const roles = user.roles?.map((ur: any) => ur.role.name) || [];
+    
     const accessToken = this.jwtService.sign({ 
       email: user.email, 
       sub: user.id, 
-      role: user.role 
+      roles: roles
     });
 
     const refreshToken = crypto.randomBytes(64).toString('hex');
@@ -67,7 +96,7 @@ export class AuthService {
 
     await this.tokenRepo.create({
       token: refreshToken,
-      adminId: user.id,
+      userId: user.id,
       expiresAt,
     });
 
@@ -77,8 +106,8 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
-        name: user.name,
-        role: user.role,
+        fullName: user.fullName,
+        roles: roles,
       },
     };
   }
@@ -88,17 +117,26 @@ export class AuthService {
 
     if (!savedToken || savedToken.isRevoked || savedToken.expiresAt < new Date()) {
       if (savedToken) {
-        // Reuse detection: if token is revoked, revoke all tokens for this user
-        await this.tokenRepo.revokeAllForUser(savedToken.adminId);
+        await this.tokenRepo.revokeAllForUser(savedToken.userId);
       }
-      throw new UnauthorizedException('Invalid or expired refresh token');
+      throw new UnauthorizedException('AUTH_UNAUTHORIZED');
     }
 
-    // Mark old token as revoked (rotation)
     await this.tokenRepo.update(savedToken.id, { isRevoked: true });
 
-    // Generate new pair
-    return this.login(savedToken.admin);
+    // Re-fetch user with roles for login
+    const user = await this.prisma.user.findUnique({
+      where: { id: savedToken.userId },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+
+    return this.login(user);
   }
 
   async logout(refreshToken: string) {
@@ -106,5 +144,47 @@ export class AuthService {
     if (savedToken) {
       await this.tokenRepo.update(savedToken.id, { isRevoked: true });
     }
+  }
+
+  async getProfile(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        roles: {
+          include: {
+            role: {
+              include: {
+                permissions: {
+                  include: {
+                    permission: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('NOT_FOUND');
+    }
+
+    const roles = user.roles.map(ur => ur.role.name);
+    const permissions = Array.from(new Set(
+      user.roles.flatMap(ur => ur.role.permissions.map(rp => rp.permission.code))
+    ));
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        avatarUrl: user.avatarUrl,
+        roles,
+        permissions,
+        createdAt: user.createdAt,
+      },
+    };
   }
 }

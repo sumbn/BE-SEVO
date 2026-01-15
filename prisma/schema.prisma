@@ -1,4 +1,6 @@
 // This is your Prisma schema file
+// Database: PostgreSQL (Postgres)
+// Protocol: 3NF, UUID v4, Soft Delete, snake_case mapping
 
 generator client {
   provider = "prisma-client-js"
@@ -9,73 +11,150 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Role-Based Access Control
-enum Role {
-  ADMIN           // Full system access
-  USER            // Basic user access  
-  CONTENT_MANAGER // Can manage website content
-  SALES           // Can view/manage leads and sales data
+// --- CORE DOMAIN: USERS & AUTH ---
+
+model User {
+  id        String    @id @default(uuid()) @db.Uuid
+  email     String    @unique @db.VarChar(255)
+  fullName  String?   @map("full_name") @db.VarChar(255)
+  avatarUrl String?   @map("avatar_url") @db.Text
+  
+  // Timestamps & Invariants
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  // Relations
+  credentials   UserCredential[]
+  roles         UserRole[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
 }
 
-// Auth user with role-based permissions
-model Admin {
-  id           String         @id @default(cuid())
-  email        String         @unique
-  password     String         // Bcrypt hashed
-  name         String?
-  role         Role           @default(USER)
-  refreshTokens RefreshToken[]
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+model UserCredential {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  passwordHash String?  @map("password_hash") @db.Text
+  provider     String   @default("local") @db.VarChar(50)
+  providerId   String?  @map("provider_id") @db.VarChar(255)
+  
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_credentials")
+}
+
+model Role {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique @db.VarChar(50) // e.g., 'ADMIN', 'USER'
+  description String?  @db.Text
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Relations
+  users       UserRole[]
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique @db.VarChar(100) // e.g., 'users:create'
+  description String?  @db.Text
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  roles RolePermission[]
+
+  @@map("permissions")
+}
+
+// Join Table for Users <-> Roles (Explicit for 3NF + Metadata)
+model UserRole {
+  userId    String   @map("user_id") @db.Uuid
+  roleId    String   @map("role_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+// Join Table for Roles <-> Permissions (Explicit for 3NF + Metadata)
+model RolePermission {
+  roleId       String   @map("role_id") @db.Uuid
+  permissionId String   @map("permission_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
 }
 
 model RefreshToken {
-  id        String   @id @default(cuid())
-  token     String   @unique
-  adminId   String
-  admin     Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
-  isRevoked Boolean  @default(false)
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  token     String   @unique @db.Text
+  isRevoked Boolean  @default(false) @map("is_revoked")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
 }
 
-// Dynamic Website Content
+// --- APP DOMAIN ---
+
 model Content {
-  key       String   @id // e.g., 'global', 'homepage', 'about'
-  value     Json     // JSON blob containing section data
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-enum CourseStatus {
-  DRAFT
-  PUBLISHED
-  ARCHIVED
+  key       String   @id @db.VarChar(100)
+  value     Json     // Dynamic section data
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("contents")
 }
 
 model Course {
-  id          String       @id @default(cuid())
-  slug        String       @unique
-  title       String
-  description String?      @db.Text
-  ageRange    String?      // e.g., '6-12 years'
-  duration    String?      // e.g., '12 weeks'
-  status      CourseStatus @default(DRAFT)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id          String   @id @default(uuid()) @db.Uuid
+  slug        String   @unique @db.VarChar(255)
+  title       String   @db.VarChar(255)
+  description String?  @db.Text
+  ageRange    String?  @map("age_range") @db.VarChar(100)
+  duration    String?  @db.VarChar(100)
+  status      String   @default("DRAFT") @db.VarChar(20)
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
 
   @@map("courses")
 }
 
 model Lead {
-  id          String   @id @default(cuid())
-  parentName  String
-  phone       String
-  studentName String?
-  studentAge  Int?
-  courseId    String?  // Optional relation to course slug or ID
-  status      String   @default("new")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id          String   @id @default(uuid()) @db.Uuid
+  parentName  String   @map("parent_name") @db.VarChar(255)
+  phone       String   @db.VarChar(20)
+  studentName String?  @map("student_name") @db.VarChar(255)
+  studentAge  Int?     @map("student_age")
+  courseId    String?  @map("course_id") @db.Uuid
+  status      String   @default("new") @db.VarChar(50)
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("leads")
 }

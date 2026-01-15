@@ -1,4 +1,6 @@
-import { Course, CourseStatus } from '@prisma/client';
+import { Course } from '@prisma/client';
+import { CourseStatus } from '../dto/course.dto';
+
 
 export interface ICourseRepository {
   findAll(filters?: { status?: CourseStatus }): Promise<Course[]>;

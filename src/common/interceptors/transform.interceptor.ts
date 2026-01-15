@@ -18,7 +18,23 @@ export class TransformInterceptor<T>
   intercept(
     context: ExecutionContext,
     next: CallHandler,
-  ): Observable<Response<T>> {
-    return next.handle().pipe(map((data) => ({ data })));
+  ): Observable<any> {
+    return next.handle().pipe(
+      map((response) => {
+        // If the response already has the structure, return it
+        if (response && response.success !== undefined) {
+          return response;
+        }
+
+        // Otherwise wrap it in the standard structure
+        return {
+          success: true,
+          data: response,
+          meta: {
+            timestamp: new Date().toISOString(),
+          },
+        };
+      }),
+    );
   }
 }

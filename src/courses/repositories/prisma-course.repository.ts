@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ICourseRepository } from '../interfaces/course-repository.interface';
-import { Course, CourseStatus } from '@prisma/client';
+import { Course } from '@prisma/client';
+import { CourseStatus } from '../dto/course.dto';
+
 
 @Injectable()
 export class PrismaCourseRepository implements ICourseRepository {

@@ -4,7 +4,8 @@ import { CreateLeadDto, UpdateLeadStatusDto } from './dto/lead.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { Role } from '@prisma/client';
+// Role enum removed from Prisma since we moved to 3NF model-based roles
+
 
 @Controller('leads')
 export class LeadsController {
@@ -17,21 +18,21 @@ export class LeadsController {
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.SALES)
+  @Roles('ADMIN', 'SALES')
   async findAll() {
     return this.leadsService.findAll();
   }
 
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.SALES)
+  @Roles('ADMIN', 'SALES')
   async findOne(@Param('id') id: string) {
     return this.leadsService.findById(id);
   }
 
   @Patch(':id/status')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.SALES)
+  @Roles('ADMIN', 'SALES')
   async updateStatus(
     @Param('id') id: string,
     @Body() updateDto: UpdateLeadStatusDto,

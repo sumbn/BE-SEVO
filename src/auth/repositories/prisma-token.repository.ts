@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ITokenRepository } from '../interfaces/token-repository.interface';
-import { RefreshToken, Admin } from '@prisma/client';
+import { RefreshToken, User } from '@prisma/client';
 
 @Injectable()
 export class PrismaTokenRepository implements ITokenRepository {
   constructor(private prisma: PrismaService) {}
 
-  async create(data: { token: string; adminId: string; expiresAt: Date }) {
+  async create(data: { token: string; userId: string; expiresAt: Date }) {
     return this.prisma.refreshToken.create({
       data,
     });
@@ -16,8 +16,8 @@ export class PrismaTokenRepository implements ITokenRepository {
   async findUnique(token: string) {
     return this.prisma.refreshToken.findUnique({
       where: { token },
-      include: { admin: true },
-    }) as Promise<(RefreshToken & { admin: Admin }) | null>;
+      include: { user: true },
+    }) as Promise<(RefreshToken & { user: User }) | null>;
   }
 
   async update(id: string, data: { isRevoked: boolean }) {
@@ -27,9 +27,9 @@ export class PrismaTokenRepository implements ITokenRepository {
     });
   }
 
-  async revokeAllForUser(adminId: string) {
+  async revokeAllForUser(userId: string) {
     await this.prisma.refreshToken.updateMany({
-      where: { adminId },
+      where: { userId },
       data: { isRevoked: true },
     });
   }

@@ -2,7 +2,8 @@ import { Injectable, Inject, NotFoundException, ConflictException } from '@nestj
 import type { ICourseRepository } from './interfaces/course-repository.interface';
 import { COURSE_REPOSITORY } from './interfaces/course-repository.interface';
 import { CreateCourseDto, UpdateCourseDto } from './dto/course.dto';
-import { CourseStatus } from '@prisma/client';
+import { CourseStatus } from './dto/course.dto';
+
 
 @Injectable()
 export class CoursesService {

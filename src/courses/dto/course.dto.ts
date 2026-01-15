@@ -1,5 +1,11 @@
 import { IsString, IsNotEmpty, IsOptional, IsEnum, Matches } from 'class-validator';
-import { CourseStatus } from '@prisma/client';
+// CourseStatus removed from Prisma enum, using local enum instead
+export enum CourseStatus {
+  DRAFT = 'DRAFT',
+  PUBLISHED = 'PUBLISHED',
+  ARCHIVED = 'ARCHIVED',
+}
+
 
 export class CreateCourseDto {
   @IsString()
