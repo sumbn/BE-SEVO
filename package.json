@@ -34,8 +34,10 @@
     "cloudinary": "^2.8.0",
     "cookie-parser": "^1.4.7",
     "google-auth-library": "^10.5.0",
+    "nestjs-i18n": "^10.6.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
+    "path-to-regexp": "^8.3.0",
     "prisma": "^5.22.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"

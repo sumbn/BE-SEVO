@@ -6,10 +6,13 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Response } from 'express';
+import { I18nService } from 'nestjs-i18n';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
-  catch(exception: any, host: ArgumentsHost) {
+  constructor(private readonly i18n: I18nService) {}
+
+  async catch(exception: any, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     
@@ -34,8 +37,23 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       console.error('Unhandled Exception:', exception);
     }
 
+    // Try to translate the message using the error code
+    try {
+      const translatedMessage = await this.i18n.translate(`common.errors.${errorCode}`, {
+        lang: host.switchToHttp().getRequest().i18nLang,
+      });
+      
+      // If translation exists (not returning the key itself), use it
+      if (translatedMessage && translatedMessage !== `common.errors.${errorCode}`) {
+        message = translatedMessage;
+      }
+    } catch (error) {
+      // Fallback to original message if translation fails
+    }
+
     response.status(status).json({
       success: false,
+      data: null,
       error: {
         code: errorCode,
         message: message,

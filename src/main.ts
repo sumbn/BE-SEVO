@@ -3,7 +3,6 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
-import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -12,7 +11,6 @@ async function bootstrap() {
 
   // Global Interceptors & Filters
   app.useGlobalInterceptors(new TransformInterceptor());
-  app.useGlobalFilters(new GlobalExceptionFilter());
 
   // Global Validation
   app.useGlobalPipes(

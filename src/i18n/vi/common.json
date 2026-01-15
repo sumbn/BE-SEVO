@@ -1,0 +1,10 @@
+{
+  "errors": {
+    "INTERNAL_SERVER_ERROR": "Lỗi máy chủ nội bộ",
+    "AUTH_UNAUTHORIZED": "Không có quyền truy cập",
+    "AUTH_FORBIDDEN": "Bạn không có quyền thực hiện hành động này",
+    "RESOURCE_NOT_FOUND": "Không tìm thấy tài nguyên",
+    "VALIDATION_ERROR": "Dữ liệu không hợp lệ",
+    "CONFLICT_ERROR": "Dữ liệu đã tồn tại hoặc có xung đột"
+  }
+}
